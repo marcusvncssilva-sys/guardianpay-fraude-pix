@@ -79,6 +79,7 @@ def main():
         SparkSession.builder.appName(f"guardianpay-bronze-{args.data_ref}")
         .config("spark.sql.session.timeZone", "UTC")
         .config("spark.hadoop.fs.file.impl", "org.apache.hadoop.fs.RawLocalFileSystem")
+        .config("spark.hadoop.fs.permissions.umask-mode", "000")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
