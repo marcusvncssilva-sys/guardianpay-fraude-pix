@@ -100,11 +100,53 @@ def main():
 
     (
         df_metricas_uf_mes.write.mode("overwrite")
+            (
+        df_transacoes_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.output_path}/bronze/transacoes")
+    )
+    (
+        df_clientes_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.output_path}/bronze/clientes")
+    )
+    (
+        df_watchlist_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.output_path}/bronze/ispb_watchlist")
+    )
         .partitionBy("data_ref")
         .parquet(f"{args.lake_path}/gold/metricas_por_uf_mes")
     )
     (
         df_ranking_ispb.write.mode("overwrite")
+            (
+        df_transacoes_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.output_path}/bronze/transacoes")
+    )
+    (
+        df_clientes_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.output_path}/bronze/clientes")
+    )
+    (
+        df_watchlist_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.output_path}/bronze/ispb_watchlist")
+    )
         .partitionBy("data_ref")
         .parquet(f"{args.lake_path}/gold/ranking_risco_ispb")
     )
