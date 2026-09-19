@@ -89,7 +89,10 @@ services:
       - guardianpay-net
 
   airflow-init:
-    image: apache/airflow:2.8.4-python3.11
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: guardianpay-airflow:2.8.4-spark
     container_name: gp-airflow-init
     depends_on:
       - data-setup
@@ -101,12 +104,13 @@ services:
     command:
       - -c
       - |
-        pip install --quiet apache-airflow-providers-apache-spark==4.7.1
         airflow db init
+        airflow connections delete 'spark_default' > /dev/null 2>&1 || true
         airflow connections add 'spark_default' \
           --conn-type 'spark' \
           --conn-host 'spark://spark-master' \
-          --conn-port '7077' || true
+          --conn-port '7077' \
+          --conn-extra '{"deploy-mode": "client"}'
         airflow users create \
           --username admin --password admin \
           --firstname Admin --lastname User \
@@ -120,7 +124,10 @@ services:
       - guardianpay-net
 
   airflow-webserver:
-    image: apache/airflow:2.8.4-python3.11
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: guardianpay-airflow:2.8.4-spark
     container_name: gp-airflow-webserver
     depends_on:
       airflow-init:
@@ -136,21 +143,22 @@ services:
       - airflow-data:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./data:/opt/data
-    command: >
-      bash -c "pip install --quiet apache-airflow-providers-apache-spark==4.7.1 &&
-               airflow webserver"
+    command: webserver
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 90s
     restart: unless-stopped
     networks:
       - guardianpay-net
 
   airflow-scheduler:
-    image: apache/airflow:2.8.4-python3.11
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: guardianpay-airflow:2.8.4-spark
     container_name: gp-airflow-scheduler
     depends_on:
       airflow-webserver:
@@ -163,9 +171,7 @@ services:
       - airflow-data:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./data:/opt/data
-    command: >
-      bash -c "pip install --quiet apache-airflow-providers-apache-spark==4.7.1 &&
-               airflow scheduler"
+    command: scheduler
     restart: unless-stopped
     networks:
       - guardianpay-net
