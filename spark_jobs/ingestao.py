@@ -126,18 +126,21 @@ def main():
 
     (
         df_transacoes_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
         .write.mode("overwrite")
         .partitionBy("data_ref")
         .parquet(f"{args.output_path}/bronze/transacoes")
     )
     (
         df_clientes_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
         .write.mode("overwrite")
         .partitionBy("data_ref")
         .parquet(f"{args.output_path}/bronze/clientes")
     )
     (
         df_watchlist_bronze.withColumn("data_ref", F.lit(args.data_ref))
+        .coalesce(1)
         .write.mode("overwrite")
         .partitionBy("data_ref")
         .parquet(f"{args.output_path}/bronze/ispb_watchlist")

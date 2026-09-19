@@ -188,12 +188,14 @@ def main():
     # 6. Escrita idempotente
     # ------------------------------------------------------------------
     (
-        df_silver.write.mode("overwrite")
+        df_silver.coalesce(1)
+        .write.mode("overwrite")
         .partitionBy("data_ref")
         .parquet(f"{args.lake_path}/silver/transacoes")
     )
     (
-        df_quarentena.write.mode("overwrite")
+        df_quarentena.coalesce(1)
+        .write.mode("overwrite")
         .partitionBy("data_ref")
         .parquet(f"{args.lake_path}/quarentena/transacoes")
     )
