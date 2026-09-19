@@ -26,7 +26,7 @@ Arquitetura detalhada e diagrama: [`docs/arquitetura.md`](docs/arquitetura.md)
 
 ## Como rodar
 
-### Opção 1 — Docker Compose (recomendado, para a demo)
+### Opção 1 — Docker Compose
 
 ```bash
 docker compose up -d
@@ -45,7 +45,7 @@ Acesse:
 docker compose down -v   # derruba tudo e limpa os volumes
 ```
 
-### Opção 1b — GitHub Codespaces (não depende do seu notebook)
+### Opção 1b — GitHub Codespaces
 
 Se você quer apresentar sem depender da RAM/CPU/rede da sua máquina no
 dia, rode exatamente o mesmo `docker compose up` dentro de um Codespace
@@ -69,7 +69,7 @@ dia, rode exatamente o mesmo `docker compose up` dentro de um Codespace
 > parte (EC2/Terraform) não coberta pelo `infra/` do curso, cujo escopo
 > é apenas Jupyter+PySpark das Aulas 1–4.
 
-### Opção 2 — Local, sem Docker/Airflow (plano B para a demo)
+### Opção 2 — Local, sem Docker/Airflow (plano B)
 
 Caso o Docker falhe no dia da apresentação:
 
