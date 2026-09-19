@@ -33,6 +33,7 @@ services:
       - ./spark_jobs:/opt/spark_jobs
       - ./quality:/opt/quality
       - ./data:/opt/data
+      - data-lake:/opt/data/lake
     networks:
       - guardianpay-net
     healthcheck:
@@ -58,6 +59,7 @@ services:
       - ./spark_jobs:/opt/spark_jobs
       - ./quality:/opt/quality
       - ./data:/opt/data
+      - data-lake:/opt/data/lake
     networks:
       - guardianpay-net
     restart: unless-stopped
@@ -69,15 +71,19 @@ services:
   data-setup:
     image: bitnamilegacy/spark:3.5
     container_name: gp-data-setup
+    user: "0:0"
     depends_on:
       - spark-master
     volumes:
       - ./:/opt/project
+      - data-lake:/opt/data/lake
     working_dir: /opt/project
     entrypoint: /bin/bash
     command:
       - -c
       - |
+        mkdir -p /opt/data/lake
+        chmod -R 777 /opt/data/lake
         pip install --quiet faker==24.3.0 pandas pyarrow
         if [ ! -f /opt/project/data/raw/transacoes/transacoes_pix.csv ]; then
           echo "Gerando dados sinteticos (transacoes_pix, clientes, watchlist)..."
@@ -120,6 +126,9 @@ services:
       - airflow-data:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./data:/opt/data
+      - data-lake:/opt/data/lake
+      - ./spark_jobs:/opt/spark_jobs
+      - ./quality:/opt/quality
     networks:
       - guardianpay-net
 
@@ -143,6 +152,9 @@ services:
       - airflow-data:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./data:/opt/data
+      - data-lake:/opt/data/lake
+      - ./spark_jobs:/opt/spark_jobs
+      - ./quality:/opt/quality
     command: webserver
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -171,6 +183,9 @@ services:
       - airflow-data:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./data:/opt/data
+      - data-lake:/opt/data/lake
+      - ./spark_jobs:/opt/spark_jobs
+      - ./quality:/opt/quality
     command: scheduler
     restart: unless-stopped
     networks:
@@ -178,6 +193,8 @@ services:
 
 volumes:
   airflow-data:
+    driver: local
+  data-lake:
     driver: local
 
 networks:

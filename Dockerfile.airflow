@@ -12,4 +12,4 @@ ENV PATH="${PATH}:${JAVA_HOME}/bin"
 USER airflow
 RUN pip install --no-cache-dir \
     apache-airflow-providers-apache-spark==4.7.1 \
-    pyspark==3.5.3
+    pyspark==3.5.3  
