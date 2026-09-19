@@ -1,0 +1,42 @@
+{
+  "name": "GuardianPay - Projeto Final Big Data Processing",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+  "forwardPorts": [8080, 8081, 7077],
+  "portsAttributes": {
+    "8080": {
+      "label": "Spark Master UI",
+      "onAutoForward": "notify"
+    },
+    "8081": {
+      "label": "Airflow Webserver (login: admin/admin)",
+      "onAutoForward": "openBrowser"
+    },
+    "7077": {
+      "label": "Spark Master (cluster)",
+      "onAutoForward": "silent"
+    }
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb"
+  },
+  "postCreateCommand": "pip install --quiet -r requirements.txt || true; echo '✅ Ambiente pronto. Rode: docker compose up -d'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}

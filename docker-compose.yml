@@ -1,0 +1,180 @@
+# =============================================================================
+# GuardianPay — Pipeline de Deteccao de Fraude PIX
+# Projeto Final — Big Data Processing (MBA Engenharia de Dados, Mackenzie)
+# =============================================================================
+# Sobe Spark (master + worker) e Airflow (init + webserver + scheduler).
+# `docker compose up` deve deixar tudo pronto para a demo ao vivo.
+#
+# Uso:
+#   docker compose up -d              # sobe o ambiente
+#   docker compose exec spark-master spark-submit ...   # roda um job manualmente
+#   docker compose down -v            # derruba tudo e limpa volumes
+#
+# Portas:
+#   Spark Master UI     -> http://localhost:8080
+#   Airflow Webserver   -> http://localhost:8081  (login: admin / admin)
+#
+# Requisitos minimos: 8GB RAM, 4 cores de CPU (mesmo do curso)
+# =============================================================================
+
+services:
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: gp-spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8080
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    volumes:
+      - ./spark_jobs:/opt/spark_jobs
+      - ./quality:/opt/quality
+      - ./data:/opt/data
+    networks:
+      - guardianpay-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: gp-spark-worker
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=2
+    volumes:
+      - ./spark_jobs:/opt/spark_jobs
+      - ./quality:/opt/quality
+      - ./data:/opt/data
+    networks:
+      - guardianpay-net
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------
+  # Job runner: gera os dados sinteticos automaticamente no primeiro boot
+  # (assim o professor so precisa dar `docker compose up`, sem passos manuais)
+  # ---------------------------------------------------------------------
+  data-setup:
+    image: bitnami/spark:3.5
+    container_name: gp-data-setup
+    depends_on:
+      - spark-master
+    volumes:
+      - ./:/opt/project
+    working_dir: /opt/project
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        pip install --quiet faker==24.3.0 pandas pyarrow
+        if [ ! -f /opt/project/data/raw/transacoes/transacoes_pix.csv ]; then
+          echo "Gerando dados sinteticos (transacoes_pix, clientes, watchlist)..."
+          python3 gerar_dados.py --n-transacoes 60000 --n-clientes 5000 --seed 42
+        else
+          echo "Dados ja existem, pulando geracao."
+        fi
+    networks:
+      - guardianpay-net
+
+  airflow-init:
+    image: apache/airflow:2.8.4-python3.11
+    container_name: gp-airflow-init
+    depends_on:
+      - data-setup
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        pip install --quiet apache-airflow-providers-apache-spark==4.7.1
+        airflow db init
+        airflow connections add 'spark_default' \
+          --conn-type 'spark' \
+          --conn-host 'spark://spark-master' \
+          --conn-port '7077' || true
+        airflow users create \
+          --username admin --password admin \
+          --firstname Admin --lastname User \
+          --role Admin --email admin@guardianpay.local || true
+        echo "Airflow inicializado. Usuario admin/admin criado."
+    volumes:
+      - airflow-data:/opt/airflow
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/data
+    networks:
+      - guardianpay-net
+
+  airflow-webserver:
+    image: apache/airflow:2.8.4-python3.11
+    container_name: gp-airflow-webserver
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__WEBSERVER__WEB_SERVER_PORT=8080
+    ports:
+      - "8081:8080"
+    volumes:
+      - airflow-data:/opt/airflow
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/data
+    command: >
+      bash -c "pip install --quiet apache-airflow-providers-apache-spark==4.7.1 &&
+               airflow webserver"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - guardianpay-net
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.4-python3.11
+    container_name: gp-airflow-scheduler
+    depends_on:
+      airflow-webserver:
+        condition: service_healthy
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+    volumes:
+      - airflow-data:/opt/airflow
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/data
+    command: >
+      bash -c "pip install --quiet apache-airflow-providers-apache-spark==4.7.1 &&
+               airflow scheduler"
+    restart: unless-stopped
+    networks:
+      - guardianpay-net
+
+volumes:
+  airflow-data:
+    driver: local
+
+networks:
+  guardianpay-net:
+    driver: bridge
+    name: guardianpay-net
