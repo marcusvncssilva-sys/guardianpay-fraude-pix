@@ -45,6 +45,7 @@ def main():
     spark = (
         SparkSession.builder.appName(f"guardianpay-gold-{args.data_ref}")
         .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.hadoop.fs.file.impl", "org.apache.hadoop.fs.RawLocalFileSystem")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
