@@ -188,6 +188,41 @@ def main():
     ).drop("cpf_pagador", "cpf_recebedor")
 
     # ------------------------------------------------------------------
+    # 5c. Métricas de cliente (nível CPF, via cpf_pagador_hash — já
+    # pseudonimizado, então nenhum dado pessoal em claro é usado aqui).
+    # Mesma técnica de window function já usada na deduplicação (passo 2).
+    # ------------------------------------------------------------------
+    janela_cliente = Window.partitionBy("cpf_pagador_hash")
+    df_silver = df_silver.withColumn(
+        "qtd_transacoes_cliente", F.count("transacao_id").over(janela_cliente)
+    ).withColumn(
+        "valor_medio_cliente", F.round(F.avg("valor").over(janela_cliente), 2)
+    )
+
+    # ------------------------------------------------------------------
+    # 5d. Análise bivariada — correlação entre valor e flag_suspeita.
+    # Guardada no mesmo quality_report.json já gravado (não cria arquivo
+    # novo), reaproveitando exatamente o mesmo padrão de escrita.
+    # ------------------------------------------------------------------
+    correlacao_valor_suspeita = (
+        df_silver.withColumn("flag_suspeita_int", F.col("flag_suspeita").cast("int"))
+        .stat.corr("valor", "flag_suspeita_int")
+    )
+    report["bivariada"] = {
+        "correlacao_valor_flag_suspeita": (
+            round(correlacao_valor_suspeita, 4) if correlacao_valor_suspeita is not None else None
+        ),
+        "interpretacao": (
+            "Correlação de Pearson entre valor da transação e a flag de suspeita. "
+            "Positiva e baixa é o esperado: valores altos aumentam levemente a chance "
+            "de sinalização, mas a regra de negócio também depende de horário e nível "
+            "de risco do ISPB, não só do valor isoladamente."
+        ),
+    }
+    with open(f"{args.report_path}/quality_report_{args.data_ref}.json", "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    # ------------------------------------------------------------------
     # 6. Escrita idempotente
     # ------------------------------------------------------------------
     (
