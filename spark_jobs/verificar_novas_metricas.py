@@ -53,3 +53,5 @@ except Exception as e:
     print(f"  TABELA NAO ENCONTRADA OU ERRO AO LER: {e}")
 
 spark.stop()
+
+#docker compose exec --user root spark-master python3 /opt/spark_jobs/verificar_novas_metricas.py 2026-09-19

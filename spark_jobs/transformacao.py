@@ -135,9 +135,7 @@ def main():
     # ------------------------------------------------------------------
     # NOTA: a chave de cada regra é o texto que aparece em quarentena_motivos
     # quando o registro REPROVA nela — por isso o nome descreve o problema
-    # ("cpf_invalido_ou_ausente"), não a condição de sucesso. Nomear como
-    # "cpf_valido" faria o relatório de quarentena dizer "cpf_valido" para
-    # um registro justamente com CPF inválido, o que confunde quem lê.
+    # ("cpf_invalido_ou_ausente"), não a condição de sucesso. 
     df_valido, df_quarentena = dq.quarantine(
         df_dedup,
         {
@@ -178,7 +176,7 @@ def main():
     # ------------------------------------------------------------------
     # 5b. LGPD — pseudonimização (aplicada SÓ AGORA, depois de todo o uso
     # do CPF em claro para joins/enriquecimento acima). cpf_pagador e
-    # cpf_recebedor são ambos dados pessoais de titulares diferentes —
+    # cpf_recebedor são ambos dados pessoais de titulares diferentes 
     # os dois recebem hash + mascaramento, e o texto claro é removido da
     # Silver. A Bronze e a Quarentena mantêm o valor original (acesso
     # restrito por design, ver docs/arquitetura.md).
@@ -201,8 +199,6 @@ def main():
 
     # ------------------------------------------------------------------
     # 5d. Análise bivariada — correlação entre valor e flag_suspeita.
-    # Guardada no mesmo quality_report.json já gravado (não cria arquivo
-    # novo), reaproveitando exatamente o mesmo padrão de escrita.
     # ------------------------------------------------------------------
     correlacao_valor_suspeita = (
         df_silver.withColumn("flag_suspeita_int", F.col("flag_suspeita").cast("int"))

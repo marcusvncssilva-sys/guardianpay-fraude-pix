@@ -2,7 +2,7 @@
 Gerador de Dados Sintéticos — GuardianPay (fintech fictícia)
 =============================================================
 Gera datasets sintéticos para o pipeline de detecção de fraude em
-transações PIX. Nenhum dado real é utilizado — todos os valores
+transações PIX. Nenhum dado real é utilizado, todos os valores
 (CPFs, nomes, ISPBs) são gerados artificialmente com a lib Faker.
 
 Saídas:

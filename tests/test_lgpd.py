@@ -69,7 +69,7 @@ def test_aplica_em_multiplas_colunas(spark, df_cpfs):
 
 
 def test_colunas_originais_nao_sao_removidas_pela_funcao(spark, df_cpfs):
-    # a função só adiciona colunas — dropar o texto claro é responsabilidade
+    # a função só adiciona colunas, dropar o texto claro é responsabilidade
     # de quem chama, e deve acontecer só depois de qualquer uso do CPF puro
     df = aplicar_pseudonimizacao(df_cpfs, ["cpf_pagador"])
     assert "cpf_pagador" in df.columns

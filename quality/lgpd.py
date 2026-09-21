@@ -5,10 +5,9 @@ Implementa os controles de privacidade aplicados na transição
 Bronze -> Silver do pipeline GuardianPay, alinhados ao princípio de
 minimização de dados da LGPD (Lei 13.709/2018).
 
-Não substitui uma avaliação jurídica formal — trata-se de um projeto
-acadêmico com dados 100% sintéticos. O objetivo aqui é demonstrar a
-técnica de engenharia (privacy by design), não emitir um parecer de
-conformidade legal.
+Não substitui uma avaliação jurídica formal, trata-se de um projeto com 
+dados 100% sintéticos. O objetivo aqui é demonstrar a técnica de engenharia, 
+não emitir um parecer de conformidade legal.
 
 Uso:
     from quality.lgpd import aplicar_pseudonimizacao
