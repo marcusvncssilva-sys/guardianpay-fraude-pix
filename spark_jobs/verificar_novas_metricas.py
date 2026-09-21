@@ -40,4 +40,16 @@ with open(f"{lake_path}/quality_reports/quality_report_{data_ref}.json") as f:
     report = json.load(f)
 print(json.dumps(report.get("bivariada", "CHAVE 'bivariada' NAO ENCONTRADA"), indent=2, ensure_ascii=False))
 
+print("\n--- Gold: metricas_por_cliente ---")
+try:
+    df_gold_cliente = spark.read.parquet(f"{lake_path}/gold/metricas_por_cliente").filter(
+        f"data_ref = '{data_ref}'"
+    )
+    total_clientes = df_gold_cliente.count()
+    print(f"  Total de linhas (deve bater com o total de clientes cadastrados): {total_clientes}")
+    print("\n  Top 5 clientes por taxa de suspeita:")
+    df_gold_cliente.orderBy(df_gold_cliente.taxa_suspeita.desc()).show(5, truncate=False)
+except Exception as e:
+    print(f"  TABELA NAO ENCONTRADA OU ERRO AO LER: {e}")
+
 spark.stop()
