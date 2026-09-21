@@ -5,10 +5,14 @@ Lê a camada Silver (transações válidas e enriquecidas) e gera as
 tabelas agregadas de negócio:
 
     gold/metricas_por_uf_mes        -> volume, valor total e taxa de suspeita por UF/mês
+    gold/metricas_por_uf_mes        -> volume, valor total e taxa de suspeita por UF/mês
     gold/ranking_risco_ispb         -> ranking de ISPBs por indicadores de risco
+    gold/metricas_por_cliente       -> volume, valor total e taxa de suspeita por cliente
 
 Uso:
+    gold/ranking_risco_ispb         -> ranking de ISPBs por indicadores de risco
     python agregacao.py --data-ref 2024-06-01
+    
 """
 
 import argparse
@@ -114,10 +118,39 @@ def main():
         .parquet(f"{args.lake_path}/gold/ranking_risco_ispb")
     )
 
+    # ------------------------------------------------------------------
+    # Gold 3 — Métricas por cliente (cpf_pagador_hash), nível de detalhe
+    # mais próximo do usado em detecção de fraude real. Usa o hash já
+    # pseudonimizado na Silver, nenhum CPF em texto claro chega até aqui.
+    # ------------------------------------------------------------------
+    df_metricas_cliente = (
+        df_silver.groupBy("cpf_pagador_hash")
+        .agg(
+            F.count("*").alias("qtd_transacoes"),
+            F.sum("valor").alias("valor_total"),
+            F.avg("valor").alias("valor_medio"),
+            F.sum(F.col("flag_suspeita").cast("int")).alias("qtd_suspeitas"),
+        )
+        .withColumn(
+            "taxa_suspeita",
+            F.round(F.col("qtd_suspeitas") / F.col("qtd_transacoes"), 4),
+        )
+        .withColumn("data_ref", F.lit(args.data_ref))
+        .orderBy(F.desc("taxa_suspeita"))
+    )
+    (
+        df_metricas_cliente.coalesce(1)
+        .write.mode("overwrite")
+        .partitionBy("data_ref")
+        .parquet(f"{args.lake_path}/gold/metricas_por_cliente")
+    )
+
     logger.info("Amostra — metricas_por_uf_mes:")
     df_metricas_uf_mes.show(5, truncate=False)
     logger.info("Amostra — ranking_risco_ispb (top suspeitas):")
     df_ranking_ispb.show(5, truncate=False)
+    logger.info("Amostra — metricas_por_cliente (top suspeitas):")
+    df_metricas_cliente.show(5, truncate=False)
 
     logger.info("Agregação Gold concluída com sucesso.")
     spark.stop()
