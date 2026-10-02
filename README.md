@@ -4,7 +4,10 @@
 MBA em Engenharia de Dados — Universidade Mackenzie
 Opção B — Domínio Livre (Finanças / Detecção de Fraude)
 
-**Integrante(s):** Marcus <!-- adicionar RA e demais integrantes, se houver -->
+**Integrantes:**
+* **Marcelo dos Santos Silva** – RA: 10754477
+* **Marcus Vinicius Silva** – RA: 10752298
+* **Tiago Nascimento Braga** – RA: 10755610
 
 ---
 
@@ -56,18 +59,10 @@ dia, rode exatamente o mesmo `docker compose up` dentro de um Codespace
 3. No terminal do Codespace: `docker compose up -d`
 4. As portas 8080 (Spark) e 8081 (Airflow) são expostas automaticamente — o VS Code no navegador mostra um link clicável para cada uma
 
-> **Atenção:** teste isso **com antecedência** (não no dia da apresentação).
-> A conta gratuita do GitHub tem limite de horas de Codespaces por mês, e
-> o primeiro build da imagem demora alguns minutos. Tenha o Plano B
-> (`run_pipeline_local.sh` + screenshots/vídeo) preparado de qualquer forma
-> — é a própria recomendação do `PROJETO_FINAL.md`.
->
+> **Atenção:**
 > Esta opção roda a mesma arquitetura localmente dentro da VM do
 > Codespace (nenhum serviço gerenciado de nuvem é usado), preservando a
-> restrição de "100% local" do projeto — diferente de tentar provisionar
-> o pipeline no AWS Academy Learner Lab, que exigiria infraestrutura à
-> parte (EC2/Terraform) não coberta pelo `infra/` do curso, cujo escopo
-> é apenas Jupyter+PySpark das Aulas 1–4.
+> restrição de "100% local" do projeto.
 
 ### Opção 2 — Local, sem Docker/Airflow (plano B)
 
